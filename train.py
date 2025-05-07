@@ -52,7 +52,6 @@ def main():
         if 'bertmodel' in name:
             lr = 0.000005
         params.append({'params': param, 'lr': lr})
-    # 创建优化器
     optimizer = torch.optim.AdamW(params, weight_decay=args['base']['weight_decay'])
 
     scheduler_warmup = get_scheduler(optimizer, args)
