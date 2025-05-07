@@ -6,7 +6,7 @@ from core.dataset import MMDataLoader
 from core.losses import MultimodalLoss
 from core.scheduler import get_scheduler
 from core.utils import setup_seed, get_best_results, interval_time, get_parameter_number
-from models.RoAF import build_model
+from models.RoCAF import build_model
 from core.metric import MetricsTop
 from tqdm import tqdm
 import time

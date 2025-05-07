@@ -1,7 +1,7 @@
 # Complementarity and Adaptive Fusion for Robust Multimodal Sentiment Analysis
 
 
-## Anonymous submitted to NeurIPS 2025.
+Anonymous submitted to NeurIPS 2025.
 ![The framework of RoAF](imgs/framework.jpg)
 
 ## Data Preparation
