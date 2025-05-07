@@ -8,7 +8,7 @@
 MOSI/MOSEI/CH-SIMS Download: Please see [MMSA](https://github.com/thuiar/MMSA)
 
 ## Environment
-The basic training environment for the results in the paper is Pytorch  1.8.0, Python 3.8 with NVIDIA Tesla A40. 
+The basic training environment for the results in the paper is Pytorch  1.8.2, Python 3.9.19 with NVIDIA Tesla A40. 
 
 ## Training
 You can quickly run the code with the following command:
