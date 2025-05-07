@@ -132,12 +132,9 @@ class RoAF(nn.Module):
         text_moe_output, text_moe_loss = self.text_MoE(enhance_l)
         img_moe_output, img_moe_loss = self.img_MoE(enhance_v)
         audio_output, audio_moe_loss = self.audio_MoE(enhance_a)
-
         moe_loss = text_moe_loss + img_moe_loss + audio_moe_loss
-
+        
         fusion_m = self.GatedFusion(text_moe_output, img_moe_output, audio_output)
-
-        # fusion = self.GRL(fusion_m)
         output = self.predict(torch.mean(fusion_m, dim=1))
 
         return {'sentiment_preds': output,
