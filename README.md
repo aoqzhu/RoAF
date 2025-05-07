@@ -2,7 +2,7 @@
 
 
 Anonymous submitted to NeurIPS 2025.
-![The framework of RoAF](imgs/framework.jpg)
+![The framework of RoCAF](imgs/framework.jpg)
 
 ## Data Preparation
 MOSI/MOSEI/CH-SIMS Download: Please see [MMSA](https://github.com/thuiar/MMSA)
