@@ -16,8 +16,6 @@ def get_parameter_number(model):
     trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_num, trainable_num
 
-
-
 def save_model(save_path, epoch, model, optimizer):
     states = {
         'epoch': epoch + 1,

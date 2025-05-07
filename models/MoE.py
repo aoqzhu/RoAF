@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+
+
 def load_balanced_loss(router_probs, expert_mask):
     num_experts = expert_mask.size(-1)
 
@@ -9,6 +11,7 @@ def load_balanced_loss(router_probs, expert_mask):
     loss = torch.mean(density_proxy * density) * (num_experts ** 2)
 
     return loss
+
 
 class Gate(nn.Module):
     def __init__(
@@ -54,11 +57,6 @@ class Gate(nn.Module):
         gate_scores = (masked_gate_scores / denominators) * capacity
 
         if use_aux_loss:
-            # load = gate_scores.sum(0)  # Sum over all examples
-            # importance = gate_scores.sum(1)  # Sum over all experts
-
-            # # Aux loss is mean suqared difference between load and importance
-            # loss = ((load - importance) ** 2).mean()
             loss = load_balanced_loss(loss_gate_scores, mask)
 
             return gate_scores, loss
@@ -184,7 +182,7 @@ class MoE_block(nn.Module):
         self.top_k = top_k
         self.dropout = dropout
         self.moe = MoE(
-            dim, dim * mult, dim, num_experts, top_k,*args, **kwargs
+            dim, dim * mult, dim, num_experts, top_k, *args, **kwargs
         )
 
         self.add_norm = nn.LayerNorm(dim)

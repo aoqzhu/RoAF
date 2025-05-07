@@ -40,7 +40,6 @@ class MMDataset(Dataset):
 
         self.rawText = data[self.mode]['raw_text']
 
-        # 遍历self.rawText
         for i in range(len(self.rawText)):
             dic = self.tokenizer(self.rawText[i], padding="max_length", truncation=True, max_length=self.token_length, return_tensors="pt")
             input_id = dic['input_ids']

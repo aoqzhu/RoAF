@@ -1,16 +1,14 @@
 import torch
 from torch import nn
-from .basic_layers import Transformer, CrossTransformer, GradientReversalLayer, CrossmodalEncoder, GatedFusion
+from .basic_layers import Transformer, CrossmodalEncoder, GatedFusion
 from .bert import BertTextEncoder
-from einops import rearrange, repeat
 import torch.nn.functional as F
 from .MoE import MoE_block
 
 
-
-class RCAF(nn.Module):
+class RoCAF(nn.Module):
     def __init__(self, args):
-        super(RCAF, self).__init__()
+        super(RoCAF, self).__init__()
 
         self.bertmodel = BertTextEncoder(use_finetune=True,
                                          transformers=args['model']['feature_extractor']['transformers'],
@@ -75,7 +73,6 @@ class RCAF(nn.Module):
                                    dropout=args['model']['moe']['dropout'],
                                    top_k=args['model']['moe']['top_k'])
 
-
         self.crossmodal_inject_t = CrossmodalEncoder(text_dim=args['model']['crossmodal_encoder']['hidden_dims'][0],
                                                      audio_dim=args['model']['crossmodal_encoder']['hidden_dims'][2],
                                                      video_dim=args['model']['crossmodal_encoder']['hidden_dims'][1],
@@ -106,7 +103,7 @@ class RCAF(nn.Module):
         return output
 
     def forward(self, complete_input, incomplete_input):
-        vision, audio, language = complete_input
+        # vision, audio, language = complete_input
         vision_m, audio_m, language_m = incomplete_input
 
         h_1_v = self.proj_v(vision_m)[:, :8]
@@ -136,4 +133,4 @@ class RCAF(nn.Module):
 
 
 def build_model(args):
-    return RCAF(args)
+    return RoCAF(args)

@@ -1,6 +1,6 @@
 base:
   seed: 1111
-  batch_size: 200
+  batch_size: 32
   num_workers: 0
   num_layers: 1
   attn_dropout: 0.5

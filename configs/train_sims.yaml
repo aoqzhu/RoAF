@@ -3,7 +3,7 @@ base:
   lr: 0.0001
   weight_decay: 0.0001
   batch_size: 32
-  n_epochs: 200
+  n_epochs: 100
   num_workers: 0
   sigma: 1.0
   moe: 0.6

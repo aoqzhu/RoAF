@@ -9,6 +9,7 @@ TRANSFORMERS_MAP = {
     'roberta': (RobertaModel, RobertaTokenizer),
 }
 
+
 class BertTextEncoder(nn.Module):
     def __init__(self, use_finetune=False, transformers='bert', pretrained='bert-base-uncased'):
         super().__init__()
@@ -18,7 +19,7 @@ class BertTextEncoder(nn.Module):
         self.tokenizer = tokenizer_class.from_pretrained(pretrained)
         self.model = model_class.from_pretrained(pretrained)
         self.use_finetune = use_finetune
-    
+
     def get_tokenizer(self):
         return self.tokenizer
 
@@ -30,7 +31,7 @@ class BertTextEncoder(nn.Module):
         input_mask: attention_mask,
         segment_ids: token_type_ids
         """
-        input_ids, input_mask, segment_ids = text[:,0,:].long(), text[:,1,:].float(), text[:,2,:].long()
+        input_ids, input_mask, segment_ids = text[:, 0, :].long(), text[:, 1, :].float(), text[:, 2, :].long()
         if self.use_finetune:
             last_hidden_states = self.model(input_ids=input_ids,
                                             attention_mask=input_mask,

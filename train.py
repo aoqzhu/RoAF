@@ -11,7 +11,6 @@ from core.metric import MetricsTop
 from tqdm import tqdm
 import time
 
-
 start = time.time()
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
@@ -22,6 +21,7 @@ parser.add_argument('--config_file', type=str, default='')
 parser.add_argument('--seed', type=int, default=-1)
 opt = parser.parse_args()
 print(opt)
+
 
 def main():
     best_valid_results, best_test_results = {}, {}
@@ -68,18 +68,19 @@ def main():
         if args['base']['do_validation']:
             valid_results = evaluate(model, dataLoader['valid'], loss_fn, epoch, metrics)
             best_valid_results = get_best_results(valid_results, best_valid_results, epoch, model, optimizer, ckpt_root,
-                                                  seed, 'valid',save_best_model=False)
+                                                  seed, 'valid', save_best_model=False)
             print(f'Current Best Valid Results: {best_valid_results}')
 
         test_results = evaluate(model, dataLoader['test'], loss_fn, epoch, metrics)
-        best_test_results = get_best_results(test_results, best_test_results, epoch, model, optimizer, ckpt_root, seed,'test',
+        best_test_results = get_best_results(test_results, best_test_results, epoch, model, optimizer, ckpt_root, seed,
+                                             'test',
                                              save_best_model=True)
 
         end_time = time.time()
         epoch_mins, epoch_secs = interval_time(start_time, end_time)
         print("Epoch: {}/{} | Current Best Test Results: {} | \n Time: {}m {}s".format(epoch, args['base']['n_epochs'],
-                                                                                    best_test_results, epoch_mins,
-                                                                                    epoch_secs))
+                                                                                       best_test_results, epoch_mins,
+                                                                                       epoch_secs))
         scheduler_warmup.step()
 
 

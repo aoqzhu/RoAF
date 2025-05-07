@@ -4,7 +4,6 @@ from einops import rearrange, repeat
 import torch.nn.functional as F
 
 
-# non-verbal information injection, i.e., multimodal fusion
 class CrossModalAttention(nn.Module):
     def __init__(self, modality1_dim, modality2_dim, embed_dim, attn_dropout=0.5):
         super(CrossModalAttention, self).__init__()
@@ -27,9 +26,6 @@ class CrossModalAttention(nn.Module):
         attention = F.softmax(torch.bmm(q, k.permute(0, 2, 1)) * self.scaling, dim=-1)
         context = torch.bmm(attention, v)
         output = self.proj(context)
-        # output = self.attn_dropout(output)
-        # output = output + self.modality1_ln(modality1)
-        # output = output + modality1
         return output
 
 
@@ -53,7 +49,7 @@ class CrossmodalEncoderLayer(nn.Module):
 
 
 class CrossmodalEncoder(nn.Module):
-    def __init__(self,text_dim, audio_dim, video_dim, embed_dim, num_layers=1, attn_dropout=0.5):
+    def __init__(self, text_dim, audio_dim, video_dim, embed_dim, num_layers=1, attn_dropout=0.5):
         super(CrossmodalEncoder, self).__init__()
         self.encoderlayer = CrossmodalEncoderLayer(text_dim, audio_dim, video_dim, embed_dim, attn_dropout)
         self.num_layers = num_layers
@@ -67,7 +63,6 @@ class CrossmodalEncoder(nn.Module):
         for layer in self.layers:
             output = layer(text, audio, video)
         return output
-
 
 
 class GatedFusion(nn.Module):
@@ -128,11 +123,11 @@ class GatedFusion(nn.Module):
             F_fused = G_t * F_t + G_v * F_v + G_a * F_a
 
         if self.use_residual:
-
             F_avg = (F_t + F_v + F_a) / 3.0
             F_fused = F_fused + F_avg
 
         return F_fused  # [B, L, D]
+
 
 class GradientReversalFn(torch.autograd.Function):
     @staticmethod
@@ -160,6 +155,7 @@ class PreNorm(nn.Module):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.fn = fn
+
     def forward(self, x, **kwargs):
         return self.fn(self.norm(x), **kwargs)
 
@@ -178,6 +174,7 @@ class PreNorm_qkv(nn.Module):
         v = self.norm_v(v)
 
         return self.fn(q, k, v)
+
 
 class PreNorm_hyper(nn.Module):
     def __init__(self, dim, fn):
@@ -198,7 +195,7 @@ class PreNorm_hyper(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
+    def __init__(self, dim, hidden_dim, dropout=0.):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, hidden_dim),
@@ -207,20 +204,21 @@ class FeedForward(nn.Module):
             nn.Linear(hidden_dim, dim),
             nn.Dropout(dropout)
         )
+
     def forward(self, x):
         return self.net(x)
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
+    def __init__(self, dim, heads=8, dim_head=64, dropout=0.):
         super().__init__()
-        inner_dim = dim_head *  heads
+        inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
 
         self.heads = heads
         self.scale = dim_head ** -0.5
 
-        self.attend = nn.Softmax(dim = -1)
+        self.attend = nn.Softmax(dim=-1)
         self.to_q = nn.Linear(dim, inner_dim, bias=False)
         self.to_k = nn.Linear(dim, inner_dim, bias=False)
         self.to_v = nn.Linear(dim, inner_dim, bias=False)
@@ -249,13 +247,13 @@ class Attention(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                PreNorm_qkv(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                PreNorm_qkv(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)),
+                PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))
             ]))
 
     def forward(self, x, save_hidden=False):
@@ -275,15 +273,15 @@ class TransformerEncoder(nn.Module):
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.):
         super().__init__()
         self.layers = nn.ModuleList([])
 
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                PreNorm_qkv(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
                 PreNorm_qkv(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                PreNorm_qkv(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)),
+                PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))
             ]))
 
     def forward(self, tgt, memory):
@@ -294,15 +292,14 @@ class TransformerDecoder(nn.Module):
         return tgt
 
 
-
 class CrossTransformerEncoder(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout=0.):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                PreNorm_qkv(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                PreNorm_qkv(dim, Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout)),
+                PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))
             ]))
 
     def forward(self, source_x, target_x):
@@ -313,9 +310,9 @@ class CrossTransformerEncoder(nn.Module):
         return target_x
 
 
-
 class Transformer(nn.Module):
-    def __init__(self, *, num_frames, token_len, save_hidden, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
+    def __init__(self, *, num_frames, token_len, save_hidden, dim, depth, heads, mlp_dim, pool='cls', channels=3,
+                 dim_head=64, dropout=0., emb_dropout=0.):
         super().__init__()
 
         self.token_len = token_len
@@ -325,8 +322,8 @@ class Transformer(nn.Module):
             self.pos_embedding = nn.Parameter(torch.randn(1, num_frames + token_len, dim))
             self.extra_token = nn.Parameter(torch.zeros(1, token_len, dim))
         else:
-             self.pos_embedding = nn.Parameter(torch.randn(1, num_frames, dim))
-             self.extra_token = None
+            self.pos_embedding = nn.Parameter(torch.randn(1, num_frames, dim))
+            self.extra_token = None
 
         self.dropout = nn.Dropout(emb_dropout)
 
@@ -335,14 +332,13 @@ class Transformer(nn.Module):
         self.pool = pool
         self.to_latent = nn.Identity()
 
-
     def forward(self, x):
         b, n, _ = x.shape
 
         if self.token_len is not None:
-            extra_token = repeat(self.extra_token, '1 n d -> b n d', b = b)
+            extra_token = repeat(self.extra_token, '1 n d -> b n d', b=b)
             x = torch.cat((extra_token, x), dim=1)
-            x = x + self.pos_embedding[:, :n+self.token_len]
+            x = x + self.pos_embedding[:, :n + self.token_len]
         else:
             x = x + self.pos_embedding[:, :n]
 
@@ -353,7 +349,8 @@ class Transformer(nn.Module):
 
 
 class CrossTransformer(nn.Module):
-    def __init__(self, *, source_num_frames, tgt_num_frames, dim, depth, heads, mlp_dim, pool = 'cls', dim_head = 64, dropout = 0., emb_dropout = 0.):
+    def __init__(self, *, source_num_frames, tgt_num_frames, dim, depth, heads, mlp_dim, pool='cls', dim_head=64,
+                 dropout=0., emb_dropout=0.):
         super().__init__()
 
         self.pos_embedding_s = nn.Parameter(torch.randn(1, source_num_frames + 1, dim))
@@ -370,13 +367,13 @@ class CrossTransformer(nn.Module):
         b, n_s, _ = source_x.shape
         b, n_t, _ = target_x.shape
 
-        extra_token = repeat(self.extra_token, '1 1 d -> b 1 d', b = b)
+        extra_token = repeat(self.extra_token, '1 1 d -> b 1 d', b=b)
 
         source_x = torch.cat((extra_token, source_x), dim=1)
-        source_x = source_x + self.pos_embedding_s[:, : n_s+1]
+        source_x = source_x + self.pos_embedding_s[:, : n_s + 1]
 
         target_x = torch.cat((extra_token, target_x), dim=1)
-        target_x = target_x + self.pos_embedding_t[:, : n_t+1]
+        target_x = target_x + self.pos_embedding_t[:, : n_t + 1]
 
         source_x = self.dropout(source_x)
         target_x = self.dropout(target_x)

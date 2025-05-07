@@ -11,10 +11,8 @@ class MultimodalLoss(nn.Module):
         self.loss_fn = nn.L1Loss()
 
     def forward(self, out, label):
-
         l_sp = self.loss_fn(out['sentiment_preds'], label['sentiment_labels'])
         moe_loss = out["moe_loss"]
-        loss = + self.sigma * l_sp + self.moe*moe_loss
+        loss = + self.sigma * l_sp + self.moe * moe_loss
 
         return {'loss': loss, 'l_sp': l_sp, 'moe_loss': moe_loss}
-
